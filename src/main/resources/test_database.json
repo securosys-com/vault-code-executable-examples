@@ -1,0 +1,11 @@
+{
+  "input":"Y291bnRlcg==",
+  "database": {
+    "url": "jdbc:postgresql://localhost:5432/executable_db?allowPublicKeyRetrieval=true&useSSL=false",
+    "username": "tsbDatabaseTest",
+    "password": "C4DF27vZUEQpqm428cUE",
+    "defaultTable": "state"
+  }
+}
+
+
