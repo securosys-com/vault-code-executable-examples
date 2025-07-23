@@ -1,0 +1,5 @@
+.gradle
+.DS_Store
+
+deploy
+.gitlab-ci.yml
