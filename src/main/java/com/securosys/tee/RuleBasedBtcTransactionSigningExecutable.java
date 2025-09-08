@@ -19,6 +19,7 @@ package com.securosys.tee;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.securosys.tee.dto.JvmInput;
 import com.securosys.tee.dto.request.Task;
 
 import java.io.IOException;
@@ -47,11 +48,10 @@ public class RuleBasedBtcTransactionSigningExecutable {
 
         String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(input);
-        byte[] decoded = Base64.getDecoder().decode(jsonNode.get("input").asText());
+        JvmInput jvmInput = mapper.readValue(input, JvmInput.class);
 
         try {
-            Task.TaskLevel6 taskLevel = mapper.readValue(decoded, Task.TaskLevel6.class);
+            Task.TaskLevel6 taskLevel = mapper.readValue(jvmInput.getInput(), Task.TaskLevel6.class);
             if (taskLevel.getApprovalToBeSigned() == null || taskLevel.getApprovalToBeSigned().isEmpty()) {
                 throw new RuntimeException("ApprovalToBeSigned is not found in input");
             }

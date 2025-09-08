@@ -40,7 +40,7 @@ public class DatabaseConnection implements Cloneable {
     private Map<String, String> parameters;
     private String username;
     private String password;
-    private String defaultTable;
+    private String table;
 
     // New field to track DB type (postgresql or mariadb)
     @JsonIgnore

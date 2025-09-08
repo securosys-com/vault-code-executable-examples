@@ -20,6 +20,7 @@ package com.securosys.tee;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.securosys.tee.dto.JvmInput;
 import com.securosys.tee.dto.request.Task;
 
 import java.io.ByteArrayOutputStream;
@@ -32,22 +33,19 @@ public class RejectedApprovalExecutable {
     public static void main(String[] args) throws IOException {
             String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
             ObjectMapper objectMapper = new ObjectMapper();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readTree(input);
-            byte[] decoded = Base64.getDecoder().decode(jsonNode.get("input").asText());
+            JvmInput jvmInput = objectMapper.readValue(input, JvmInput.class);
 
             try {
-                Task.TaskLevel6 taskLevel = objectMapper.readValue(decoded, Task.TaskLevel6.class);
+                Task.TaskLevel6 taskLevel = objectMapper.readValue(jvmInput.getInput(), Task.TaskLevel6.class);
                 if (taskLevel.getApprovalToBeSigned() == null || taskLevel.getApprovalToBeSigned().equals("")) {
                     throw new RuntimeException("ApprovalToBeSigned is not found in input");
                 }
                 byte[] prefix = "REJECTED:".getBytes(StandardCharsets.UTF_8);
-                byte[] decode = Base64.getDecoder().decode(taskLevel.getApprovalToBeSigned());
 
                 // Step 3: Concatenate both byte arrays
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 outputStream.write(prefix);
-                outputStream.write(decode);
+                outputStream.write(taskLevel.getApprovalToBeSigned().getBytes());
 
                 byte[] combined = outputStream.toByteArray();
 

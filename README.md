@@ -1,7 +1,6 @@
+# VaultCode Executable Examples
 
-# VaultCode Example apps
-
-This repo contains several VaultCode example apps. Additionally, we provide instructions on how to configure,
+This repo contains several VaultCode executable examples. Additionally, we provide instructions on how to configure,
 define your inputs and debugging.
 
 ## Table of Contents
@@ -9,7 +8,6 @@ define your inputs and debugging.
 - [Build apps](#build-apps)
 - [Input](#input)
 - [Output](#output)
-- [Test Run](#test-run)
 - [Debug on IntelliJ IDEA](#debug-on-intellij-idea)
 
 ---
@@ -26,25 +24,35 @@ To build all jars with all mains use:
 ./gradlew clean buildAll
 ```
 
-If you prefer, it is possible to specify which `.jar` you want to build by specifying the main_class_name
+To build a single `.jar`, set the `MAIN` environment variable to the name of the class to build:
 
 ```shell
-MAIN=MAIN_CLASS_NAME ./gradlew clean build
-
-#example with PositiveApprovalExecutable
-
 MAIN=PositiveApprovalExecutable ./gradlew clean build
 ```
 
-if env 'MAIN' is not provided, then ./gradlew will build `RunJarApplication.jar`
+If the `MAIN` environment variable is empty or not set, it defaults to `RunJarApplication`.
 
 ## Input
 
-VaultCode provides data to JVM as JSON. Sample JSON Structure:
+VaultCode reads input from stdin.
+
+When VaultCode runs your app, the VaultCode runtime provides the input.
+When developing locally, here are some ways by which you can pass data to your app:
+
+```bash
+java -jar example.jar < input.txt
+# or
+echo "data" | java -jar example.jar
+# or
+cat input.txt | java -jar example.jar
+```
+
+The VaultCode runtime provides data to your app in JSON format.
+For example:
 
 ```json
 {
-  "input":"input in base64",
+  "input": "input in base64",
   "database": {
     "url": "jdbc url",
     "username": "temporary user",
@@ -54,9 +62,10 @@ VaultCode provides data to JVM as JSON. Sample JSON Structure:
 }
 ```
 
->*Note* - database properties are filled only, when `shareDatabase:true` in the application.yml
+> [!note]
+> The database properties are only present when `shareDatabase: true` is defined in the `application.yml`.
 
-For best experience, we recommend that when you rprovide input to VaultCode with your executable, to do so like this in `main()`:
+To read the input, do:
 
 ```java
 String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
@@ -64,35 +73,13 @@ String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
 
 ## Output
 
-In order for VaultCode to generate output, define:
+To generate output, your VaultCode app should write to stdout.
+Make sure to flush the output buffer!
 
 ```java
-    System.out.write(returnInBytes);
-    System.out.flush();
+System.out.write(output);
+System.out.flush();
 ```
-
-## Test Run
-
-VaultCode does not need arguments to be provided to the jar.
-To run java code with data, you have 2 options:
-
-1) Using input file
-
-```bash
-java -jar example.jar < input.txt
-```
-
-2) Using pipe
-
-```bash
-echo "data" | java -jar example.jar
-
-or
-
-cat input.txt | java -jar example.jar
-```
-
-It is done in this way, as sending input via arguments is limited and can vary depending on OS.
 
 ## Debug on IntelliJ IDEA
 

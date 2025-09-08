@@ -98,7 +98,7 @@ def findMainClasses = {
     return mainClasses
 }
 application {
-    mainClass = 'com.securosys.tee.RunJarApplication'
+    mainClass = 'com.securosys.tee.RunJarExecutable'
 }
 
 
@@ -114,7 +114,7 @@ shadowJar {
         inputs.property("forceRebuild", System.currentTimeMillis())
         dependsOn tasks.named('classes')
         doFirst {
-            mainClasses = findMainClasses()
+            def mainClasses = findMainClasses()
             def foundClass = false;
             for(int i=0;i<mainClasses.size();i++){
                 if(mainClasses.get(i).toString().contains(selectedMainClass)){
@@ -126,7 +126,6 @@ shadowJar {
                 //can i check this if task is clean
                 throw new GradleException("❌ Main class not found: '${selectedMainClass}'. Available main classes: ${mainClasses}")
             }
-            print(selectedMainClass)
             def classParts = selectedMainClass.split('\\.')
             def jarName = classParts[-1]
 
@@ -142,7 +141,7 @@ shadowJar {
 
         from(sourceSets.main.output)
         configurations = [project.configurations.runtimeClasspath]
-    }
+}
 
 
 // Make startScripts use the shadowJar fat jar instead of the normal jar
@@ -183,6 +182,7 @@ mainClasses.each { mainClassName ->
 tasks.register("buildAll") {
     group = 'build'
     description = 'Builds all jars for all main classes'
+    dependsOn(classes)
     dependsOn mainClasses.collect { mainClassName ->
         def shortName = mainClassName.tokenize('.').last()
         tasks.named("shadowJar${shortName}")

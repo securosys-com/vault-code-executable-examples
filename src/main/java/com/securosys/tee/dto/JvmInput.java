@@ -21,8 +21,9 @@ import lombok.Data;
 
 @Data
 public class JvmInput {
-    private String input;
+    private byte[] input;
     private DatabaseConnection database = null;
+    private DatabaseConnection masterDatabase = null;
     private UserCounterDto counter;
     private String timestamp;
 

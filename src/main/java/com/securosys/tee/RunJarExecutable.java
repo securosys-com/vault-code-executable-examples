@@ -20,6 +20,7 @@ package com.securosys.tee;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.securosys.tee.dto.JvmInput;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,10 +30,9 @@ public class RunJarExecutable {
     public static void main(String[] args) throws IOException {
         String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(input);
-        byte[] decoded = Base64.getDecoder().decode(jsonNode.get("input").asText());
+        JvmInput jvmInput = mapper.readValue(input, JvmInput.class);
         StringBuilder builder = new StringBuilder();
-        builder.append("executed output of input: ").append(new String(decoded));
+        builder.append("executed output of input: ").append(new String(jvmInput.getInput()));
         System.out.write(builder.toString().getBytes());
         System.out.flush();
 
