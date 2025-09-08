@@ -1,0 +1,214 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '8.3.7'
+}
+import org.objectweb.asm.*
+
+repositories {
+    mavenCentral()
+}
+// Disable the default jar task since we want to use shadowJar fat jar only
+tasks.named('jar') {
+    enabled = false
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+
+dependencies {
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
+
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
+
+    // https://mvnrepository.com/artifact/commons-codec/commons-codec
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.18.0'
+
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-xml', version: '2.18.2'
+
+    // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
+    implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
+
+    // https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
+    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
+
+    // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
+    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.28'
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30' // Use the latest version
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    // Dependency for JUnit testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.4'
+    // https://mvnrepository.com/artifact/org.postgresql/postgresql
+    implementation 'org.postgresql:postgresql:42.7.7'
+    implementation 'com.h2database:h2:2.2.220'
+    implementation 'org.ow2.asm:asm:9.7'
+
+
+
+}
+
+def findMainClasses = {
+    def classDir = layout.buildDirectory.dir("classes/java/main").get().asFile
+    def mainClasses = []
+
+    fileTree(dir: classDir, include: '**/*.class').visit { FileVisitDetails fvd ->
+        if (!fvd.file.isFile()) return
+
+        def relativePath = fvd.relativePath.pathString
+        if (relativePath.contains('$')) return // Skip inner classes
+
+        def className = relativePath
+                .replaceAll(/\.class$/, '')
+                .replace('/', '.')
+
+        def reader = new ClassReader(fvd.file.bytes)
+        def hasMain = false
+
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                if (
+                        name == 'main' &&
+                                descriptor == '([Ljava/lang/String;)V' &&
+                                (access & Opcodes.ACC_PUBLIC) &&
+                                (access & Opcodes.ACC_STATIC)
+                ) {
+                    hasMain = true
+                }
+                return null
+            }
+        }, 0)
+
+        if (hasMain) {
+            mainClasses << className
+        }
+    }
+
+    return mainClasses
+}
+application {
+    mainClass = 'com.securosys.tee.RunJarExecutable'
+}
+
+
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+
+def selectedMainClass = System.getenv('MAIN') ?: (project.hasProperty('main') ? project.property('main') : application.mainClass.get())
+
+shadowJar {
+        inputs.property("forceRebuild", System.currentTimeMillis())
+        dependsOn tasks.named('classes')
+        doFirst {
+            def mainClasses = findMainClasses()
+            def foundClass = false;
+            for(int i=0;i<mainClasses.size();i++){
+                if(mainClasses.get(i).toString().contains(selectedMainClass)){
+                    selectedMainClass=mainClasses.get(i).toString();
+                    foundClass=true;
+                }
+            }
+            if(!foundClass){
+                //can i check this if task is clean
+                throw new GradleException("❌ Main class not found: '${selectedMainClass}'. Available main classes: ${mainClasses}")
+            }
+            def classParts = selectedMainClass.split('\\.')
+            def jarName = classParts[-1]
+
+            archiveBaseName.set(jarName)
+            archiveClassifier.set('')
+            archiveVersion.set('')
+            manifest {
+                attributes 'Main-Class': selectedMainClass
+            }
+
+            println "✅ Building fat JAR for: ${selectedMainClass}"
+        }
+
+        from(sourceSets.main.output)
+        configurations = [project.configurations.runtimeClasspath]
+}
+
+
+// Make startScripts use the shadowJar fat jar instead of the normal jar
+tasks.named('startScripts') {
+    dependsOn tasks.named('shadowJar')
+    doFirst {
+        classpath = files(tasks.named('shadowJar').get().archiveFile)
+    }
+}
+
+// Make assemble and build depend on shadowJar fat jar
+tasks.named('assemble') {
+    dependsOn tasks.named('shadowJar')
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('shadowJar')
+}
+def mainClasses = findMainClasses()
+
+
+mainClasses.each { mainClassName ->
+    def shortName = mainClassName.tokenize('.').last()
+    tasks.register("shadowJar${shortName}", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+        group = 'build'
+        description = "Creates a fat jar for ${mainClassName}"
+        archiveBaseName.set(shortName)
+        archiveClassifier.set('')
+        archiveVersion.set('')
+        from(sourceSets.main.output)
+        configurations = [project.configurations.runtimeClasspath]
+        manifest {
+            attributes 'Main-Class': mainClassName
+        }
+    }
+}
+
+tasks.register("buildAll") {
+    group = 'build'
+    description = 'Builds all jars for all main classes'
+    dependsOn(classes)
+    dependsOn mainClasses.collect { mainClassName ->
+        def shortName = mainClassName.tokenize('.').last()
+        tasks.named("shadowJar${shortName}")
+    }
+}
+tasks.register("buildForGithub"){
+    dependsOn("buildAll")
+    finalizedBy("clean")
+    doLast {
+        def compiledDir = file("$buildDir/../executables")
+        def libsDir = file("$buildDir/libs")
+
+        // ✅ Delete compiled directory if it exists
+        if (compiledDir.exists()) {
+            delete compiledDir
+        }
+
+        // ✅ Recreate compiled directory
+        compiledDir.mkdirs()
+
+        copy {
+            from libsDir
+            include '*.jar'
+            into compiledDir
+        }
+
+        println "✅ Moved JARs to ${compiledDir}"
+    }
+}
