@@ -1,0 +1,38 @@
+/**
+ * Copyright (c)2005 Securosys SA, authors: Tomasz Madej
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * https://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p>
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ **/
+package com.securosys.tee.dto.tsb.response;
+
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+@Data
+@SuppressWarnings("unused")
+@Schema(description = "Response containing information about the derived key.", nullable = true)
+public class DerivedKeyAttributesDto {
+
+    @JacksonXmlProperty(localName = "type", isAttribute = true)
+    @Schema(description = "The chaincode", example = "BIP32", nullable = true)
+    private String derivationType;
+
+    @JacksonXmlText
+    @Schema(description = "The derivation value",
+            example = "273C08290FA1734D77C5C1D9BDA9B123F5DA38C060AE5D64D5BE987377E71E63", nullable = true)
+    private String derivationValue;
+}
