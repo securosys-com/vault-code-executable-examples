@@ -1,0 +1,9 @@
+{
+  "input": "Y291bnRlcg==",
+  "database": {
+    "url": "jdbc:postgresql://db.internal:5432/example",
+    "username": "temporary_user",
+    "password": "temporary_password",
+    "table": "state"
+  }
+}
