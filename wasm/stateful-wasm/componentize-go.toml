@@ -1,0 +1,2 @@
+worlds = ["securosys:database/command@0.1.0"]
+wit_paths = ["wit"]

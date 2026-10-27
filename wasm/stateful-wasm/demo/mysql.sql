@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS state (
+    `key`   VARCHAR(255) PRIMARY KEY,
+    `value` TEXT NOT NULL
+);

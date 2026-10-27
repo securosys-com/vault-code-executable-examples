@@ -1,0 +1,12 @@
+package securosys:database@0.1.0;
+
+world command {
+  include wasi:cli/command@0.2.8;
+  import wasi:io/poll@0.2.8;
+  import wasi:io/streams@0.2.8;
+  import wasi:sockets/network@0.2.8;
+  import wasi:sockets/instance-network@0.2.8;
+  import wasi:sockets/ip-name-lookup@0.2.8;
+  import wasi:sockets/tcp@0.2.8;
+  import wasi:sockets/tcp-create-socket@0.2.8;
+}

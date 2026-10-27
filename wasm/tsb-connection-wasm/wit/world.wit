@@ -1,0 +1,6 @@
+package securosys:tsb@0.1.0;
+
+world command {
+  include wasi:cli/command@0.2.8;
+  import wasi:http/outgoing-handler@0.2.8;
+}
